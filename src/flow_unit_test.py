@@ -146,7 +146,7 @@ def setup_flow(flow_name):
     parent_pg_id = parent_pg.id
 
     # Create and Enable Context Map controller service
-    # print('Creating and Enabling StandardHttpContextMap controller service...')
+    print('Creating and Enabling StandardHttpContextMap controller service...')
     context_map = create_enable_ctx_map_controller(parent_pg)
 
     # Get PG from registry and Deploy in Nifi
@@ -173,12 +173,12 @@ def setup_flow(flow_name):
             print("Error errors when searching underneath process group:", e)
 
     # Get all controller services within Parent PG
+    
     controller_service_list = canvas.list_all_controllers(parent_pg_id, True)
-
+    
     # Get referencing components i.e. controller services referred by other cs
     ref_comp_list = []
     get_cs_referencing_components(controller_service_list, ref_comp_list)
-
     # Enable all controller services in specific order of reference
     print('Enabling all controller services of target test process group in specific order of reference...')
     enable_controller_services(ref_comp_list)
@@ -217,10 +217,10 @@ def teardown_flow(flow_name):
     canvas.delete_process_group(pg_entity, True, True)
 
     # Delete Parameter Context
-    print('Deleting parameter context...')
-    parameter_context_list = parameters.list_all_parameter_contexts()
-    for parameter_context in parameter_context_list:
-        parameters.delete_parameter_context(parameter_context, True)
+    # print('Deleting parameter context...')
+    # parameter_context_list = parameters.list_all_parameter_contexts()
+    # for parameter_context in parameter_context_list:
+    # parameters.delete_parameter_context(parameter_context, True)
 
     teardown_duration = round(time.time() - teardown_start_time, 2)
     # End TearDown
@@ -258,10 +258,11 @@ def setup_test_case(tc_dir, test_context):
 
     # Create all the processors required for flow unit testing
     print('Creating / Updating all the processors required for flow unit testing...')
+
     dict_processors = create_processors(test_api_port, context_map, input_attribs.find(test_context.json_data)[0].value,
                                         input_content_text, expected_out_content_text, report, parent_pg,
                                         processors_to_skip, test_context)
-
+    
     connection_list = ['http_req_processor', 'in_mapper_processor', 'replace_text_in_processor', 'input_port',
                        'output_port', 'extract_content_processor', 'check_expected_equals_content_processor', 'replace_text_out_processor',
                        'http_resp_processor']
@@ -419,10 +420,8 @@ registry_id = add_registry_client(registry_base_url).id
 
 # Get target test bucket
 bucket_id = versioning.get_registry_bucket(test_bucket_name, 'name', False).identifier
-
 # Get the root process group id for future tasks
 root_id = canvas.get_root_pg_id()
-
 # Get Root PG object
 root_pg = canvas.get_process_group(root_id, 'id')
 
@@ -434,7 +433,6 @@ root_pg = canvas.get_process_group(root_id, 'id')
 test_data_base_dir = repo_base_dir + test_data_dir
 test_dir = Path(os.path.abspath(test_data_base_dir))
 allFiles = [x for x in test_dir.rglob('*' + TEST_CASE_FILE_EXTENSION) if x.is_file()]
-
 testsByFlow = {}
 
 for afile in allFiles:
