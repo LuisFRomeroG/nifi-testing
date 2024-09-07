@@ -133,11 +133,11 @@ def get_referred_controller_services(cs_dto, ref_cs_list):
     for rec_cs in cs_dto:
         if rec_cs.component.reference_type != "ControllerService":
             return
-        if rec_cs.component.name in ref_cs_list:
-            ref_cs_list.remove(rec_cs.component.name)
-            ref_cs_list.append(rec_cs.component.name)
+        if rec_cs.component.id in ref_cs_list:
+            ref_cs_list.remove(rec_cs.component.id)
+            ref_cs_list.append(rec_cs.component.id)
         else:
-            ref_cs_list.append(rec_cs.component.name)
+            ref_cs_list.append(rec_cs.component.id)
         if hasattr(rec_cs, 'referencing_components') and len(rec_cs.referencing_components) > 0:
             get_referred_controller_services(rec_cs.component, ref_cs_list)
 
@@ -145,8 +145,8 @@ def get_referred_controller_services(cs_dto, ref_cs_list):
 # Gets controller services referencing other components
 def get_cs_referencing_components(controller_services, ref_component_list):
     for controller_service in controller_services:
-        if controller_service.component.name not in ref_component_list:
-            ref_component_list.append(controller_service.component.name)
+        if controller_service.component.id not in ref_component_list:
+            ref_component_list.append(controller_service.component.id)
         if len(controller_service.component.referencing_components) > 0:
             get_referred_controller_services(controller_service.component.referencing_components, ref_component_list)
 
@@ -154,27 +154,22 @@ def get_cs_referencing_components(controller_services, ref_component_list):
 # Enables Controller Services
 def enable_controller_services(ref_component_list):
     for ref_comp in ref_component_list:
-        cs_entity = canvas.get_controller(ref_comp, 'name', True)
+        cs_entity = canvas.get_controller(ref_comp, 'id', True)
         if isinstance(cs_entity, list):
             for inner_ref_comp in cs_entity:
-                print("Enabling controller service:", inner_ref_comp.component.name)
+                print("Enabling inner controller service:", inner_ref_comp.component.name)
                 canvas.schedule_controller(inner_ref_comp, True, True)
         else:
-            print("Enabling controller service:", ref_comp)
+            print("Enabling controller service:", cs_entity.component.name)
             canvas.schedule_controller(cs_entity, True, True)
 
 
 # Disables Controller Services
 def disable_controller_services(ref_component_list):
     for ref_comp in ref_component_list:
-        del_cs_entity = canvas.get_controller(ref_comp, 'name', True)
-        if isinstance(del_cs_entity, list):
-            for inner_ref_comp in del_cs_entity:
-                print("Disabling controller service:", inner_ref_comp.component.name)
-                canvas.schedule_controller(inner_ref_comp, False, True)
-        else:
-            print("Disabling controller service:", ref_comp)
-            canvas.schedule_controller(del_cs_entity, False, True)
+        del_cs_entity = canvas.get_controller(ref_comp, 'id', True)
+        print("Disabling controller service:", del_cs_entity.component.name)
+        canvas.schedule_controller(del_cs_entity, False, True)
 
 
 def update_sensitive_properties(pg_id, update_data):
