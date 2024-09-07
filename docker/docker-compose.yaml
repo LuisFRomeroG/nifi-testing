@@ -1,5 +1,5 @@
 ---
-version: '3' 
+version: '4' 
 services:
   nifi: 
     build: .
@@ -37,7 +37,7 @@ services:
       - postgres
 
   registry-ssl:
-    image: "apache/nifi-registry:1.15.3"
+    image: "apache/nifi-registry:1.25.0"
     hostname: nifi-registry-ssl
     container_name: nifi-registry-ssl
     ports:
