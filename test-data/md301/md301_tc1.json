@@ -1,0 +1,19 @@
+{
+	"input":{
+	 "attributes": {
+	  "mode":"testing"
+	 },
+	  "flow_content":{
+		"file_name": "md301_tc1_input.txt"
+	  }
+	},
+	"expected_output": {
+	 "attributes": {
+		"module":"EPOS",
+		"mode":"testing"
+	 },
+	  "flow_content": {
+	  	"file_name": "md301_tc1_output.txt"
+	  }
+	}
+}
