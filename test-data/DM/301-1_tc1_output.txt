@@ -1,0 +1,2 @@
+INSERT|LEGAL_ENTITY|121||Centtral Interlomas Blvd. Palmas Hills 1, Piso 12-102|Valle de las Palmas|||Huixquilucan|Estado de México|||52764|||||||QUMA470929F37|||||||||||||||Sociedad S.A. de C.V.
+INSERT|LEGAL_ENTITY|122||20 de Noviembre #12|El barrio|||San Martin Texmelucan|Puebla|||74120|||||||QUMA470929F37|||||||||||||||Sociedad S.A. de C.V.123124123
