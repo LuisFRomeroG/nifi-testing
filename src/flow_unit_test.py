@@ -59,6 +59,8 @@ FAILED = 'FAILED'
 TEST_PG = 'Routing'
 MAIN_FLOW = 'integration-platform'
 
+INPUT_PORT="input301_testing"
+OUTPUT_PORT="output301-1_testing"
 
 # --------------------------------- Functions --------------------------------- #
 # Configure Nifi, Nifi Registry and test data
@@ -153,6 +155,21 @@ def setup_flow(flow_name):
     print('Getting target unit test process group from Registry and Deploying...')
     deployed_pg = versioning.deploy_flow_version(
         parent_pg_id, (500, 1000), bucket_id, flow_id, registry_id, flow_unit_test_version)
+    
+    # Create input port and connect it to input_testing port
+    in_port=canvas.create_port(deployed_pg.id,"INPUT_PORT","input","DISABLED",(200,100))
+    input_port_list=canvas.list_all_input_ports(deployed_pg.id)
+    for input_port in input_port_list:
+        if input_port.component.name == INPUT_PORT:
+            test_in_port = input_port     
+    canvas.create_connection(in_port,test_in_port)
+    #Create output port and connect it to output_testing port
+    out_port=canvas.create_port(deployed_pg.id,"OUTPUT_PORT","output","DISABLED",(-200,-100))
+    output_port_list=canvas.list_all_output_ports(deployed_pg.id)
+    for output_port in output_port_list:
+        if output_port.component.name == OUTPUT_PORT:
+            test_out_port = output_port   
+    canvas.create_connection(test_out_port,out_port)
 
     # In case of integration platform, as main flow can't be deployed because of multiple dependencies - Kafka
     # Kerberos, STS etc. we are extracting the child flow(Routing), deploying and running test cases
@@ -173,7 +190,7 @@ def setup_flow(flow_name):
             print("Error errors when searching underneath process group:", e)
 
     # Get all controller services within Parent PG
-    
+
     controller_service_list = canvas.list_all_controllers(parent_pg_id, True)
     
     # Get referencing components i.e. controller services referred by other cs
