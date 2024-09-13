@@ -1,5 +1,5 @@
 ---
-version: '4' 
+version: '5' 
 services:
   nifi: 
     build: .
@@ -31,6 +31,8 @@ services:
     volumes:
       - ./nifi-certs/keystore.jks:/opt/certs/keystore.jks
       - ./nifi-certs/truststore.jks:/opt/certs/truststore.jks
+      - ./files/cacerts:/data/nifi/INT/CERT/cacerts
+      - ./files/postgresql-42.6.2.jar:/opt/postgresql_driver/postgresql-42.6.2.jar
     links:
       - sftp
       - wiremock
