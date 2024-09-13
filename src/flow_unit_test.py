@@ -59,15 +59,13 @@ FAILED = 'FAILED'
 TEST_PG = 'Routing'
 MAIN_FLOW = 'integration-platform'
 
-INPUT_PORT="input301_testing"
-OUTPUT_PORT="output301-1_testing"
-
 # --------------------------------- Functions --------------------------------- #
 # Configure Nifi, Nifi Registry and test data
 def configure():
     global config, test_bucket_name, test_data_dir, input_attribs_jsonpath, expected_out_attribs_jsonpath, \
         input_file_name_jsonpath, expected_out_file_name_jsonpath, skip_test_dirs, skip_tests, nifi_test_api, \
-        test_api_port, registry_base_url, repo_base_dir, flow_version_dictionary, sensitive_props, include_only
+        test_api_port, registry_base_url, repo_base_dir, flow_version_dictionary, sensitive_props, include_only,\
+        testing_input, testing_output
 
     # Read env vars from env loaded by AppConfig
     config.nifi_config.host = HTTPS + Env.NIFI_HOSTNAME + ':' + str(Env.NIFI_PORT) + '/nifi-api'
@@ -99,6 +97,8 @@ def configure():
     flow_version_mapping = props.get('flow_version_mapping').data
     flow_version_dictionary = json.loads(flow_version_mapping)
     include_only = csv_to_list(props.get("include_only").data)
+    testing_input = props.get("testing_input").data
+    testing_output = props.get("testing_output").data
 
     # Import input and expected output data from an external repo if needed
     git_url_tuple = props.get("external_repo_git_url")
@@ -155,19 +155,19 @@ def setup_flow(flow_name):
     print('Getting target unit test process group from Registry and Deploying...')
     deployed_pg = versioning.deploy_flow_version(
         parent_pg_id, (500, 1000), bucket_id, flow_id, registry_id, flow_unit_test_version)
-    
+
     # Create input port and connect it to input_testing port
     in_port=canvas.create_port(deployed_pg.id,"INPUT_PORT","input","DISABLED",(200,100))
     input_port_list=canvas.list_all_input_ports(deployed_pg.id)
     for input_port in input_port_list:
-        if input_port.component.name == INPUT_PORT:
+        if input_port.component.name == testing_input:
             test_in_port = input_port     
     canvas.create_connection(in_port,test_in_port)
     #Create output port and connect it to output_testing port
     out_port=canvas.create_port(deployed_pg.id,"OUTPUT_PORT","output","DISABLED",(-200,-100))
     output_port_list=canvas.list_all_output_ports(deployed_pg.id)
     for output_port in output_port_list:
-        if output_port.component.name == OUTPUT_PORT:
+        if output_port.component.name == testing_output:
             test_out_port = output_port   
     canvas.create_connection(test_out_port,out_port)
 
