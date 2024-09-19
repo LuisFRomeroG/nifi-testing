@@ -133,11 +133,11 @@ def get_referred_controller_services(cs_dto, ref_cs_list):
     for rec_cs in cs_dto:
         if rec_cs.component.reference_type != "ControllerService":
             continue
-        if rec_cs.component.name in ref_cs_list:
-            ref_cs_list.remove(rec_cs.component.name)
-            ref_cs_list.append(rec_cs.component.name)
+        if rec_cs.component.id in ref_cs_list:
+            ref_cs_list.remove(rec_cs.component.id)
+            ref_cs_list.append(rec_cs.component.id)
         else:
-            ref_cs_list.append(rec_cs.component.name)
+            ref_cs_list.append(rec_cs.component.id)
         if hasattr(rec_cs, 'referencing_components') and len(rec_cs.referencing_components) > 0:
             get_referred_controller_services(rec_cs.component, ref_cs_list)
 
@@ -145,8 +145,8 @@ def get_referred_controller_services(cs_dto, ref_cs_list):
 # Gets controller services referencing other components
 def get_cs_referencing_components(controller_services, ref_component_list):
     for controller_service in controller_services:
-        if controller_service.component.name not in ref_component_list:
-            ref_component_list.append(controller_service.component.name)
+        if controller_service.component.id not in ref_component_list:
+            ref_component_list.append(controller_service.component.id)
         if len(controller_service.component.referencing_components) > 0:
             get_referred_controller_services(controller_service.component.referencing_components, ref_component_list)
 
