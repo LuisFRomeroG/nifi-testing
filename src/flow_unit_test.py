@@ -190,12 +190,11 @@ def setup_flow(flow_name):
             print("Error errors when searching underneath process group:", e)
 
     # Get all controller services within Parent PG
-
     controller_service_list = canvas.list_all_controllers(parent_pg_id, True)
-    
     # Get referencing components i.e. controller services referred by other cs
     ref_comp_list = []
     get_cs_referencing_components(controller_service_list, ref_comp_list)
+
     # Enable all controller services in specific order of reference
     print('Enabling all controller services of target test process group in specific order of reference...')
     enable_controller_services(ref_comp_list)
@@ -233,6 +232,7 @@ def teardown_flow(flow_name):
     pg_entity = nifi.apis.process_groups_api.ProcessGroupsApi().get_process_group(id=parent_pg_id)
     canvas.delete_process_group(pg_entity, True, True)
 
+    # Disabling this gives intended functionality for our case, else it causes problems with sensible parameters. 
     # Delete Parameter Context
     # print('Deleting parameter context...')
     # parameter_context_list = parameters.list_all_parameter_contexts()
