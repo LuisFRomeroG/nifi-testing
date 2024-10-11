@@ -31,13 +31,15 @@ services:
     volumes:
       - ./nifi-certs/keystore.jks:/opt/certs/keystore.jks
       - ./nifi-certs/truststore.jks:/opt/certs/truststore.jks
+      - ./files/cacerts:/data/nifi/INT/CERT/cacerts
+      - ./files/postgresql-42.6.2.jar:/opt/postgresql_driver/postgresql-42.6.2.jar
     links:
       - sftp
       - wiremock
       - postgres
 
   registry-ssl:
-    image: "apache/nifi-registry:1.15.3"
+    image: "apache/nifi-registry:1.25.0"
     hostname: nifi-registry-ssl
     container_name: nifi-registry-ssl
     ports:

@@ -59,13 +59,13 @@ FAILED = 'FAILED'
 TEST_PG = 'Routing'
 MAIN_FLOW = 'integration-platform'
 
-
 # --------------------------------- Functions --------------------------------- #
 # Configure Nifi, Nifi Registry and test data
 def configure():
     global config, test_bucket_name, test_data_dir, input_attribs_jsonpath, expected_out_attribs_jsonpath, \
         input_file_name_jsonpath, expected_out_file_name_jsonpath, skip_test_dirs, skip_tests, nifi_test_api, \
-        test_api_port, registry_base_url, repo_base_dir, flow_version_dictionary, sensitive_props, include_only
+        test_api_port, registry_base_url, repo_base_dir, flow_version_dictionary, sensitive_props, include_only,\
+        testing_input, testing_output
 
     # Read env vars from env loaded by AppConfig
     config.nifi_config.host = HTTPS + Env.NIFI_HOSTNAME + ':' + str(Env.NIFI_PORT) + '/nifi-api'
@@ -97,6 +97,8 @@ def configure():
     flow_version_mapping = props.get('flow_version_mapping').data
     flow_version_dictionary = json.loads(flow_version_mapping)
     include_only = csv_to_list(props.get("include_only").data)
+    testing_input = props.get("testing_input").data
+    testing_output = props.get("testing_output").data
 
     # Import input and expected output data from an external repo if needed
     git_url_tuple = props.get("external_repo_git_url")
@@ -146,13 +148,28 @@ def setup_flow(flow_name):
     parent_pg_id = parent_pg.id
 
     # Create and Enable Context Map controller service
-    # print('Creating and Enabling StandardHttpContextMap controller service...')
+    print('Creating and Enabling StandardHttpContextMap controller service...')
     context_map = create_enable_ctx_map_controller(parent_pg)
 
     # Get PG from registry and Deploy in Nifi
     print('Getting target unit test process group from Registry and Deploying...')
     deployed_pg = versioning.deploy_flow_version(
         parent_pg_id, (500, 1000), bucket_id, flow_id, registry_id, flow_unit_test_version)
+
+    # Create input port and connect it to input_testing port
+    in_port=canvas.create_port(deployed_pg.id,"INPUT_PORT","input","DISABLED",(200,100))
+    input_port_list=canvas.list_all_input_ports(deployed_pg.id)
+    for input_port in input_port_list:
+        if input_port.component.name == testing_input:
+            test_in_port = input_port     
+    canvas.create_connection(in_port,test_in_port)
+    #Create output port and connect it to output_testing port
+    out_port=canvas.create_port(deployed_pg.id,"OUTPUT_PORT","output","DISABLED",(-200,-100))
+    output_port_list=canvas.list_all_output_ports(deployed_pg.id)
+    for output_port in output_port_list:
+        if output_port.component.name == testing_output:
+            test_out_port = output_port   
+    canvas.create_connection(test_out_port,out_port)
 
     # In case of integration platform, as main flow can't be deployed because of multiple dependencies - Kafka
     # Kerberos, STS etc. we are extracting the child flow(Routing), deploying and running test cases
@@ -174,7 +191,6 @@ def setup_flow(flow_name):
 
     # Get all controller services within Parent PG
     controller_service_list = canvas.list_all_controllers(parent_pg_id, True)
-
     # Get referencing components i.e. controller services referred by other cs
     ref_comp_list = []
     get_cs_referencing_components(controller_service_list, ref_comp_list)
@@ -216,11 +232,12 @@ def teardown_flow(flow_name):
     pg_entity = nifi.apis.process_groups_api.ProcessGroupsApi().get_process_group(id=parent_pg_id)
     canvas.delete_process_group(pg_entity, True, True)
 
+    # Disabling this gives intended functionality for our case, else it causes problems with sensible parameters. 
     # Delete Parameter Context
-    print('Deleting parameter context...')
-    parameter_context_list = parameters.list_all_parameter_contexts()
-    for parameter_context in parameter_context_list:
-        parameters.delete_parameter_context(parameter_context, True)
+    # print('Deleting parameter context...')
+    # parameter_context_list = parameters.list_all_parameter_contexts()
+    # for parameter_context in parameter_context_list:
+    # parameters.delete_parameter_context(parameter_context, True)
 
     teardown_duration = round(time.time() - teardown_start_time, 2)
     # End TearDown
@@ -258,10 +275,11 @@ def setup_test_case(tc_dir, test_context):
 
     # Create all the processors required for flow unit testing
     print('Creating / Updating all the processors required for flow unit testing...')
+
     dict_processors = create_processors(test_api_port, context_map, input_attribs.find(test_context.json_data)[0].value,
                                         input_content_text, expected_out_content_text, report, parent_pg,
                                         processors_to_skip, test_context)
-
+    
     connection_list = ['http_req_processor', 'in_mapper_processor', 'replace_text_in_processor', 'input_port',
                        'output_port', 'extract_content_processor', 'check_expected_equals_content_processor', 'replace_text_out_processor',
                        'http_resp_processor']
@@ -419,10 +437,8 @@ registry_id = add_registry_client(registry_base_url).id
 
 # Get target test bucket
 bucket_id = versioning.get_registry_bucket(test_bucket_name, 'name', False).identifier
-
 # Get the root process group id for future tasks
 root_id = canvas.get_root_pg_id()
-
 # Get Root PG object
 root_pg = canvas.get_process_group(root_id, 'id')
 
@@ -434,7 +450,6 @@ root_pg = canvas.get_process_group(root_id, 'id')
 test_data_base_dir = repo_base_dir + test_data_dir
 test_dir = Path(os.path.abspath(test_data_base_dir))
 allFiles = [x for x in test_dir.rglob('*' + TEST_CASE_FILE_EXTENSION) if x.is_file()]
-
 testsByFlow = {}
 
 for afile in allFiles:
